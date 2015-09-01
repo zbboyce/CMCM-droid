@@ -1,0 +1,104 @@
+#!/bin/bash
+#==========create folder named Results to store all results=========
+result="/home/m3user/Desktop/Results"
+if [ -d "$result" ];
+then 
+rm -rf "$result"
+#read read -p "press any key to continue..." INP
+mkdir "$result"
+
+else
+mkdir "$result"
+fi
+
+#================select a property===================
+Folder_properties="/home/m3user/Desktop/properties"
+for folder_a_property in ${Folder_properties}/*;
+do
+    #=======temp_property_file==/home/m3user/Desktop/properties/XX=========
+    temp_property_file="$folder_a_property"
+    #=======property==/home/m3user/Desktop/properties/XX/dynodroid.properties=========
+    property="$temp_property_file/dynodroid.properties"
+    #=======temp_basename_property==XX=======================
+    temp_basename_property=`basename $temp_property_file`
+    
+    #======replace the property from my property to dynodroid's============
+    rm /home/m3user/Desktop/dyno-droid-fse13/dynodroid.properties
+    cp $property /home/m3user/Desktop/dyno-droid-fse13
+
+    echo $temp_property_file
+    echo $property
+    echo $temp_basename_property
+   # read -p "press any key to continue..." INP
+
+    #=========create subdir in dir properties=============
+    porResult="/home/m3user/Desktop/Results/$temp_basename_property"
+    mkdir "$porResult"
+    #=======create a log named time.log to record apk or course run time======
+     cd $porResult && touch time.csv
+
+      echo  APPname,starttime,endtime,runningtime>>time.csv
+      
+     #=======copy the current property to proResult======
+     cp $property $porResult
+     
+  #   read -p "press any key to continue..." INP
+   Folder_A="/home/m3user/Desktop/dyno-droid-fse13-apps"
+   for file_a in ${Folder_A}/*;
+   do
+      #1.=======get the untested apk or source name=====
+
+      #=======basename for creating new result folder=======
+      temp_basename_file=`basename $file_a`
+      #=======real path name=================
+      temp_file="$file_a"
+    
+      echo $temp_file
+      echo "$temp_basename_file is running!"
+
+      #2.=======clean the environment===========
+      cd /home/m3user/Desktop/dyno-droid-fse13 && ./clean.sh
+   
+      #3.=======copy apps or sources to /home/m3user/Desktop/dyno-droid-fse13/apps=======
+      cp -r "$temp_file" /home/m3user/Desktop/dyno-droid-fse13/apps
+
+      #=========record the app name, start time to time.log and do not change line number========
+      echo -n $temp_basename_file>>$porResult/time.csv
+      echo -n ,$(date +%Y-%m-%d-%T)>>$porResult/time.csv
+      
+      #read -p "press any key to continue..." INP
+     
+      #========record start time======================
+      CURTIME=`date +"%Y-%m-%d %H:%M:%S"`
+      echo CURTIME:$CURTIME
+      curS=`date -d "$CURTIME" +%s`
+      echo startTime_S:$curS
+
+      #4.=======run dynodroid===================
+      cd /home/m3user/Desktop/dyno-droid-fse13 && ant run
+
+      #=========record the app end time to time.log and do not change line number========
+      echo -n ,$(date +%Y-%m-%d-%T)>>$porResult/time.csv
+      #=========calculate the interval time APP cost======================
+      LASTLINE=`date +"%Y-%m-%d %H:%M:%S"`
+      echo LASTLINE:$LASTLINE
+      lastS=`date -d "$LASTLINE" +%s`
+      echo endTime_S:$lastS
+      interval=`expr $lastS - $curS`
+      minute=$[$interval / 60]
+      second=$[$interval % 60]
+      echo intervaTime:$minute min $second second
+      echo ,$minute min $second second>>$porResult/time.csv
+
+      #5.=======create new folder to store the result=========
+      myResult="/home/m3user/Desktop/Results/$temp_basename_property/$temp_basename_file"
+      mkdir "$myResult"
+         
+      #6.======run done then copy the result to my result folder=======
+      cp -r /home/m3user/Desktop/dyno-droid-fse13/workingDir $myResult
+   
+   
+   done
+done
+
+
